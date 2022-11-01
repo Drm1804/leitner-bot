@@ -11,3 +11,7 @@ export function randomArrayElement(arr: unknown[]): unknown {
   return arr[random]
 }
 
+export function mixArray(arr: unknown[]): unknown[] {
+  return arr.sort(() => 0.5 - Math.random());
+}
+
