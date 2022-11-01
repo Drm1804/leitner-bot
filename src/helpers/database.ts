@@ -1,5 +1,5 @@
 import { FirebaseApp, initializeApp } from 'firebase/app';
-import { Database, getDatabase, ref, set } from 'firebase/database';
+import { Database, getDatabase, ref, set, get } from 'firebase/database';
 import { getAuth, signInWithEmailAndPassword } from 'firebase/auth';
 import { conf } from '../../config.js';
 
@@ -34,6 +34,14 @@ class DatabaseService {
       })).then(resolve, reject).catch(reject)
     })
   }
+
+  getAppLhrases(userId: number): Promise<Collection<Phrase>> {
+    return new Promise((resolve, reject) => {
+      get(ref(this.db, 'phrases/' + userId))
+      .then((snapshot) => resolve(snapshot.val()), reject)
+      .catch(reject)
+    })
+  }
 }
 
 const db = new DatabaseService();
@@ -44,4 +52,8 @@ export interface Phrase {
   id: string;
   phFrom: string;
   phTo: string;
+}
+
+export interface Collection<T> {
+  [key: string]: T
 }

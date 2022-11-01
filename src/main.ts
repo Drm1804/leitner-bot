@@ -6,13 +6,16 @@ import { Logger } from 'log4js';
 import { phrases } from './helpers/bot_phrases.js';
 import keyboards, { GlobalButtons } from './helpers/keyboards.js';
 import { AddPhrases } from './contrallors/add-phrases.js';
+import { Repeater } from './contrallors/repeater.js';
 
 const bot = new Telegraf<Scenes.SceneContext>(conf.botToken);
 
 const addPhrases = new AddPhrases()
+const repeater = new Repeater()
 
 const stage = new Scenes.Stage<Scenes.SceneContext>([
-  addPhrases.scene
+  addPhrases.scene,
+  repeater.scene
 ], {
   //параметры
   ttl: 600 // время сколько будет храниться сцена в памяти
@@ -45,8 +48,8 @@ export enum MainMenuButtons {
     return ctx.reply('Ok', keyboards.mainMenu())
   })
 
-  bot.hears(MainMenuButtons.ADD, (ctx) => ctx.scene.enter(addPhrases.sceneKey))
-  // bot.hears(MainMenuButtons.ENG_RUS, () => {})
+  bot.hears(MainMenuButtons.ADD, (ctx) => ctx.scene.enter(addPhrases.sceneKey));
+  bot.hears(MainMenuButtons.ENG_RUS, (ctx) => ctx.scene.enter(repeater.sceneKey));
 
   bot.launch();
 })()

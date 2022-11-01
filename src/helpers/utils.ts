@@ -6,5 +6,8 @@ export  async function pause(val = 100): Promise<null> {
   })
 }
 
-
+export function randomArrayElement(arr: unknown[]): unknown {
+  const random = Math.floor(Math.random() * arr.length);
+  return arr[random]
+}
 
