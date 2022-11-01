@@ -1,8 +1,14 @@
-# Avito notification bot
+# Бот по системе Лейтнера (Флеш карточки для запоминания)
 
 Бот, помогает в изучении иностранных слов и фраз
 
 Бот был написан в рамках [цикла видео](https://www.youtube.com/playlist?list=PLX6Ggq2UB4cZA5yhOH8tnkyegr7O-PpLb)
+
+## используемые технологии
+ - node.js
+ - firebase
+ - typescript
+ - telegraph.js
 
 ## Поддержка и развитие
 

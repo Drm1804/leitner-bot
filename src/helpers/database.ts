@@ -27,11 +27,11 @@ class DatabaseService {
     }
   }
 
-  writeMessage(mes: string, time: number): Promise<void> {
+  writePhrases(ph: Phrase, key: number): Promise<void> {
     return new Promise((resolve, reject) => {
-      set(ref(this.db, 'messages/' + String(time)), {
-        mes
-      }).then(resolve, reject).catch(reject)
+      set(ref(this.db, 'phrases/' + String(key) + '/' + ph.id), ({
+        ...ph
+      })).then(resolve, reject).catch(reject)
     })
   }
 }
@@ -39,3 +39,9 @@ class DatabaseService {
 const db = new DatabaseService();
 export default db;
 
+
+export interface Phrase {
+  id: string;
+  phFrom: string;
+  phTo: string;
+}
