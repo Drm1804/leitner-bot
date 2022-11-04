@@ -11,5 +11,6 @@ export const phrases = {
   repeater_finish_repeat: 'Начать заново или повторить ошибочные?',
   repeater_have_no_wrong_answeres: 'Ты нигде не ошибся, поэтому выходим',
   repeater_again: 'Начинаем с начала',
-  repeater_continue: 'Продолжаем'
+  repeater_remove_success: 'Успешно удалил фразу:',
+  repeater_remove_error: 'Не получилось удалить фразу'
 }

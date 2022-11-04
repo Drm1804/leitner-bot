@@ -9,10 +9,10 @@ import { mixArray } from '../helpers/utils.js';
 const _logger: Logger = logger.get('Repeater');
 
 export enum RepeaterButtons {
-  NEXT = '⏭️ Next',
   CHECK = '❓ Проверить',
   CORRECT = '✅ Знаю',
   WRONG = '❌ Ошибся',
+  DELETE = '🚫 Remove',
   REPEAT_WRONG = '🔁 Повторить',
 }
 
@@ -29,11 +29,11 @@ export class Repeater {
     this.scene.enter((ctx) => this.enter(ctx));
     this.scene.leave((ctx) => this.leave(ctx));
     this.scene.hears(GlobalButtons.START, (ctx) => this.ask(ctx));
-    this.scene.hears(RepeaterButtons.NEXT, (ctx) => this.ask(ctx));
     this.scene.hears(RepeaterButtons.CHECK, (ctx) => this.check(ctx));
     this.scene.hears(RepeaterButtons.WRONG, (ctx) => this.answer(ctx, true));
     this.scene.hears(RepeaterButtons.CORRECT, (ctx) => this.answer(ctx));
     this.scene.hears(RepeaterButtons.REPEAT_WRONG, (ctx) => this.reeateWrong(ctx));
+    this.scene.hears(RepeaterButtons.DELETE, (ctx) => this.deletePhrase(ctx));
   }
 
   private async enter(ctx): Promise<void> {
@@ -72,6 +72,7 @@ export class Repeater {
     _logger.info('Check');
     ctx.reply(this.currentPhrase.phFrom, Markup.keyboard([
       [RepeaterButtons.CORRECT, RepeaterButtons.WRONG],
+      [RepeaterButtons.DELETE],
       [GlobalButtons.FINISH]
     ]))
   }
@@ -89,12 +90,10 @@ export class Repeater {
         [RepeaterButtons.REPEAT_WRONG],
         [GlobalButtons.FINISH]
       ]))
+      return;
     }
 
-    ctx.reply(phrases.repeater_continue, Markup.keyboard([
-      [RepeaterButtons.NEXT],
-      [GlobalButtons.FINISH]
-    ]))
+    this.ask(ctx);
   }
 
   private reeateWrong(ctx): void {
@@ -110,6 +109,23 @@ export class Repeater {
     this.counter = 0;
     this.wrongAnswers = [];
     ctx.reply(phrases.repeater_again)
+    this.ask(ctx)
+  }
+
+  private async deletePhrase(ctx): Promise<void> {
+    _logger.info('deletePhrase');
+
+    const userId = ctx.message.chat.id;
+
+    try {
+      await db.deletePhrase(userId, this.currentPhrase.id);
+      _logger.info('Remove phrase');
+      await ctx.reply(phrases.repeater_remove_success + this.currentPhrase.phFrom + ' => ' + this.currentPhrase.phTo)
+    } catch {
+      _logger.info('Can\t remove phrase');
+      await ctx.reply(phrases.repeater_remove_error);
+    }
+
     this.ask(ctx)
   }
 }

@@ -1,5 +1,5 @@
 import { FirebaseApp, initializeApp } from 'firebase/app';
-import { Database, getDatabase, ref, set, get } from 'firebase/database';
+import { Database, getDatabase, ref, set, get, remove } from 'firebase/database';
 import { getAuth, signInWithEmailAndPassword } from 'firebase/auth';
 import { conf } from '../../config.js';
 
@@ -39,6 +39,14 @@ class DatabaseService {
     return new Promise((resolve, reject) => {
       get(ref(this.db, 'phrases/' + userId))
       .then((snapshot) => resolve(snapshot.val()), reject)
+      .catch(reject)
+    })
+  }
+
+  deletePhrase(userId, phId): Promise<void> {
+    return new Promise((resolve, reject) => {
+      remove(ref(this.db, 'phrases/' + userId + '/' + phId))
+      .then(resolve, reject)
       .catch(reject)
     })
   }
