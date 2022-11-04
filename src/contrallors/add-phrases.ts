@@ -15,7 +15,7 @@ export class AddPhrases {
 
   constructor() {
     this.scene = new Scenes.BaseScene<Scenes.SceneContext>(this.sceneKey);
-    this.scene.hears(GlobalButtons.FINISH, (ctx) =>  this.leave(ctx))
+    this.scene.hears(GlobalButtons.FINISH, (ctx) => this.leave(ctx))
     this.scene.enter((ctx) => this.enter(ctx));
     this.scene.leave((ctx) => this.leave(ctx));
     this.scene.on('text', (ctx) => this.addPhrases(ctx))
@@ -41,7 +41,7 @@ export class AddPhrases {
 
     const listPhrases = this.mapToPhrases(parsed);
 
-    if(listPhrases.length === 0) {
+    if (listPhrases.length === 0) {
       return ctx.reply(phrases.add_phrases_error);
     }
 
@@ -80,7 +80,12 @@ export class AddPhrases {
     return arr.map(([phFrom, phTo]) => ({
       id: uuid4(),
       phFrom,
-      phTo
+      phTo,
+      metrics: {
+        percent: 0,
+        success: 0,
+        wrong: 0,
+      }
     }))
   }
 }

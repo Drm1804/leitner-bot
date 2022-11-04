@@ -1,12 +1,16 @@
 import { Logger } from 'log4js';
 import { Markup, Scenes } from 'telegraf';
-import { phrases } from '../helpers/bot_phrases.js';
-import db, { Phrase } from '../helpers/database.js';
-import keyboards, { GlobalButtons } from '../helpers/keyboards.js';
-import logger from '../helpers/logger.js';
-import { mixArray } from '../helpers/utils.js';
+import { phrases } from '../../helpers/bot_phrases.js';
+import db, { Phrase } from '../../helpers/database.js';
+import keyboards, { GlobalButtons } from '../../helpers/keyboards.js';
+import logger from '../../helpers/logger.js';
+import { mixArray } from '../../helpers/utils.js';
+import { pretifyAsk, recalculateMetrics } from './repeater.utils.js';
 
 const _logger: Logger = logger.get('Repeater');
+
+const LIMIT_ONE_LEARN_CYCLE = 10;
+const STAT_TRASHHOLD = 10; // через сколько ответов начинать считать статистику
 
 export enum RepeaterButtons {
   CHECK = '❓ Проверить',
@@ -41,7 +45,7 @@ export class Repeater {
     const userId = ctx.message.chat.id;
     // получить весь список пар фраз
     try {
-      const collection = await db.getAppLhrases(userId);
+      const collection = await db.getFilteredPhrases(userId, LIMIT_ONE_LEARN_CYCLE);
       _logger.info('Collection of words was got');
       this.learnPhrases = mixArray(Object.values(collection)) as Phrase[];
       _logger.info(`There are ${this.learnPhrases.length} phrases`);
@@ -62,7 +66,7 @@ export class Repeater {
     this.currentPhrase = this.learnPhrases[this.counter];
     this.counter += 1;
 
-    ctx.reply(this.currentPhrase.phTo, Markup.keyboard([
+    ctx.reply(pretifyAsk(this.currentPhrase, this.counter, this.learnPhrases.length), Markup.keyboard([
       [RepeaterButtons.CHECK],
       [GlobalButtons.FINISH]
     ]))
@@ -77,8 +81,12 @@ export class Repeater {
     ]))
   }
 
-  private answer(ctx, isWrong = false): void {
+  private async answer(ctx, isWrong = false): Promise<void> {
     _logger.info('Answer');
+    const userId = ctx.message.chat.id;
+
+    this.currentPhrase.metrics = recalculateMetrics(this.currentPhrase.metrics, isWrong, STAT_TRASHHOLD)
+    await db.updatePhrasesMetrics(this.currentPhrase, userId);
 
     if (isWrong) {
       this.wrongAnswers.push(this.currentPhrase);

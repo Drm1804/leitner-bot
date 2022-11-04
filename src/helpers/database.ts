@@ -1,5 +1,5 @@
 import { FirebaseApp, initializeApp } from 'firebase/app';
-import { Database, getDatabase, ref, set, get, remove } from 'firebase/database';
+import { Database, getDatabase, ref, set, get, remove, query, limitToFirst, orderByChild } from 'firebase/database';
 import { getAuth, signInWithEmailAndPassword } from 'firebase/auth';
 import { conf } from '../../config.js';
 
@@ -27,17 +27,26 @@ class DatabaseService {
     }
   }
 
-  writePhrases(ph: Phrase, key: number): Promise<void> {
+  writePhrases(ph: Phrase, userId: number): Promise<void> {
     return new Promise((resolve, reject) => {
-      set(ref(this.db, 'phrases/' + String(key) + '/' + ph.id), ({
+      set(ref(this.db, userId + '/phrases/' + ph.id), ({
         ...ph
       })).then(resolve, reject).catch(reject)
     })
   }
 
-  getAppLhrases(userId: number): Promise<Collection<Phrase>> {
+  updatePhrasesMetrics(ph: Phrase, userId: number): Promise<void> {
     return new Promise((resolve, reject) => {
-      get(ref(this.db, 'phrases/' + userId))
+      set(ref(this.db, userId + '/phrases/' + ph.id), ({
+        ...ph
+      })).then(resolve, reject).catch(reject)
+    })
+  }
+
+  getFilteredPhrases(userId: number, limit: number): Promise<Collection<Phrase>> {
+    return new Promise((resolve, reject) => {
+      const phRef = query(ref(this.db, userId + '/phrases'), orderByChild('metrics/percent'), limitToFirst(limit));
+      get(phRef)
       .then((snapshot) => resolve(snapshot.val()), reject)
       .catch(reject)
     })
@@ -45,7 +54,7 @@ class DatabaseService {
 
   deletePhrase(userId, phId): Promise<void> {
     return new Promise((resolve, reject) => {
-      remove(ref(this.db, 'phrases/' + userId + '/' + phId))
+      remove(ref(this.db, userId + '/phrases/' + phId))
       .then(resolve, reject)
       .catch(reject)
     })
@@ -60,6 +69,13 @@ export interface Phrase {
   id: string;
   phFrom: string;
   phTo: string;
+  metrics: PhraseMetrics;
+}
+
+export interface PhraseMetrics {
+  percent: number;
+  success: number;
+  wrong: number;
 }
 
 export interface Collection<T> {

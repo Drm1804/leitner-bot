@@ -6,7 +6,7 @@ import { Logger } from 'log4js';
 import { phrases } from './helpers/bot_phrases.js';
 import keyboards, { GlobalButtons } from './helpers/keyboards.js';
 import { AddPhrases } from './contrallors/add-phrases.js';
-import { Repeater } from './contrallors/repeater.js';
+import { Repeater } from './contrallors/repeater/repeater.js';
 
 const bot = new Telegraf<Scenes.SceneContext>(conf.botToken);
 
