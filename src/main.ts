@@ -5,28 +5,28 @@ import logger from './helpers/logger.js'
 import { Logger } from 'log4js';
 import { phrases } from './helpers/bot_phrases.js';
 import keyboards, { GlobalButtons } from './helpers/keyboards.js';
-import { AddPhrases } from './contrallors/add-phrases.js';
+import { AddCards } from './contrallors/add-cards.js';
 import { Repeater } from './contrallors/repeater/repeater.js';
 
 const bot = new Telegraf<Scenes.SceneContext>(conf.botToken);
 
-const addPhrases = new AddPhrases()
+const addCards = new AddCards()
 const repeater = new Repeater()
 
 const stage = new Scenes.Stage<Scenes.SceneContext>([
-  addPhrases.scene,
+  addCards.scene,
   repeater.scene
 ], {
   //параметры
-  ttl: 600 // время сколько будет храниться сцена в памяти
+  ttl: 1800 // время сколько будет храниться сцена в памяти
 });
 
 bot.use(session()); // помечена как депрекейтед, но альтернатив пока нет
 bot.use(stage.middleware());
 
 export enum MainMenuButtons {
-  ADD = '✅ Add',
-  ENG_RUS = '🇺🇸 -> 🇷🇺'
+  ADD = '✅ Добавить слова',
+  WORKOUT = '💪 Тренеровка'
 }
 
 (async (): Promise<void> => {
@@ -48,8 +48,8 @@ export enum MainMenuButtons {
     return ctx.reply('Ok', keyboards.mainMenu())
   })
 
-  bot.hears(MainMenuButtons.ADD, (ctx) => ctx.scene.enter(addPhrases.sceneKey));
-  bot.hears(MainMenuButtons.ENG_RUS, (ctx) => ctx.scene.enter(repeater.sceneKey));
+  bot.hears(MainMenuButtons.ADD, (ctx) => ctx.scene.enter(addCards.sceneKey));
+  bot.hears(MainMenuButtons.WORKOUT, (ctx) => ctx.scene.enter(repeater.sceneKey));
 
   bot.launch();
 })()

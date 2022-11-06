@@ -1,13 +1,13 @@
-import { PhraseMetrics, Phrase } from '../../helpers/database.js';
+import { CardMetrics, Card } from '../../helpers/database.js';
 
 function recalculatePersent(success: number, wrong: number): number {
   return Math.round((success / (success + wrong)) * 100);
 }
 
-export function recalculateMetrics(metrics: PhraseMetrics, isWrong: boolean, trashhold: number): PhraseMetrics {
-  const { success, wrong } = metrics;
+export function recalculateMetrics(metrics: CardMetrics, isWrong: boolean, trashhold: number): CardMetrics {
   isWrong ? (metrics.wrong += 1) : (metrics.success += 1);
 
+  const { success, wrong } = metrics;
   if ((success + wrong) > trashhold) {
     metrics.percent = recalculatePersent(success, wrong);
   }
@@ -15,8 +15,8 @@ export function recalculateMetrics(metrics: PhraseMetrics, isWrong: boolean, tra
   return metrics;
 }
 
-export function pretifyAsk(ph: Phrase, count: number, all: number): string {
-  return `${ph.phTo}
+export function pretifyAsk(ph: Card, count: number, all: number): string {
+  return `${ph.term}
 
 (${count}/${all})
 `

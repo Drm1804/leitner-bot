@@ -27,34 +27,34 @@ class DatabaseService {
     }
   }
 
-  writePhrases(ph: Phrase, userId: number): Promise<void> {
+  writeCards(card: Card, userId: number): Promise<void> {
     return new Promise((resolve, reject) => {
-      set(ref(this.db, userId + '/phrases/' + ph.id), ({
-        ...ph
+      set(ref(this.db, userId + '/cards/' + card.id), ({
+        ...card
       })).then(resolve, reject).catch(reject)
     })
   }
 
-  updatePhrasesMetrics(ph: Phrase, userId: number): Promise<void> {
+  updateCardsMetrics(card: Card, userId: number): Promise<void> {
     return new Promise((resolve, reject) => {
-      set(ref(this.db, userId + '/phrases/' + ph.id), ({
-        ...ph
+      set(ref(this.db, userId + '/cards/' + card.id), ({
+        ...card
       })).then(resolve, reject).catch(reject)
     })
   }
 
-  getFilteredPhrases(userId: number, limit: number): Promise<Collection<Phrase>> {
+  getFilteredCards(userId: number, limit: number): Promise<Collection<Card>> {
     return new Promise((resolve, reject) => {
-      const phRef = query(ref(this.db, userId + '/phrases'), orderByChild('metrics/percent'), limitToFirst(limit));
-      get(phRef)
+      const cardsRef = query(ref(this.db, userId + '/cards'), orderByChild('metrics/percent'), limitToFirst(limit));
+      get(cardsRef)
       .then((snapshot) => resolve(snapshot.val()), reject)
       .catch(reject)
     })
   }
 
-  deletePhrase(userId, phId): Promise<void> {
+  deleteCard(userId: number, cardId: string): Promise<void> {
     return new Promise((resolve, reject) => {
-      remove(ref(this.db, userId + '/phrases/' + phId))
+      remove(ref(this.db, userId + '/cards/' + cardId))
       .then(resolve, reject)
       .catch(reject)
     })
@@ -65,14 +65,14 @@ const db = new DatabaseService();
 export default db;
 
 
-export interface Phrase {
+export interface Card {
   id: string;
-  phFrom: string;
-  phTo: string;
-  metrics: PhraseMetrics;
+  term: string;
+  definition: string;
+  metrics: CardMetrics;
 }
 
-export interface PhraseMetrics {
+export interface CardMetrics {
   percent: number;
   success: number;
   wrong: number;

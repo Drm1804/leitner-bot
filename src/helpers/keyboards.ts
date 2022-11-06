@@ -6,7 +6,7 @@ const keyboards: KeyboardInterface = {}
 
 keyboards.mainMenu = (): Markup.Markup<any> => {
   return Markup.keyboard([
-    [MainMenuButtons.ENG_RUS],
+    [MainMenuButtons.WORKOUT],
     [MainMenuButtons.ADD],
     [GlobalButtons.FINISH],
   ])
