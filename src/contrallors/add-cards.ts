@@ -5,6 +5,8 @@ import db, { Card } from '../helpers/database.js';
 import keyboards, { GlobalButtons } from '../helpers/keyboards.js';
 import logger from '../helpers/logger.js';
 import { v4 as uuid4 } from 'uuid';
+import { DEFAULT_COLLECTION } from './collections/collections.js';
+import { getUserId } from '../helpers/utils.js';
 
 const _logger: Logger = logger.get('AddCards');
 const MAX_INPUT_LENGTH = 4000;
@@ -24,9 +26,13 @@ export class AddCards {
   }
 
 
-  private enter(ctx): void {
+  private async enter(ctx): Promise<void> {
     _logger.info('Enter scene');
-    return ctx.reply(phrases.enter_add, Markup.keyboard([GlobalButtons.FINISH]));
+
+
+    // Временно при заходе в этот раздел будем создавать коллекцию по-умолчанию
+    await db.createCollection(getUserId(ctx), DEFAULT_COLLECTION)
+    await ctx.reply(phrases.enter_add, Markup.keyboard([GlobalButtons.FINISH]));
   }
 
   private leave(ctx): void {
@@ -38,7 +44,7 @@ export class AddCards {
   private addCards(ctx: Scenes.SceneContext<Scenes.SceneSessionData>): Promise<unknown> {
     _logger.info('Start to parse user cards');
     const text = ctx.message['text'];
-    const userId = ctx.message.chat.id;
+    const userId = getUserId(ctx);
 
     const parsed = this.parceTextToArray(text);
 
@@ -51,7 +57,7 @@ export class AddCards {
     const qAll = [];
 
     for (const ph of listCards) {
-      qAll.push(db.writeCards(ph, userId))
+      qAll.push(db.writeCards(ph, userId, DEFAULT_COLLECTION.id))
     }
 
     return Promise.all(qAll)

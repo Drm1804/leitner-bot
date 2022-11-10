@@ -27,36 +27,54 @@ class DatabaseService {
     }
   }
 
-  writeCards(card: Card, userId: number): Promise<void> {
+  writeCards(card: Card, userId: number, collectionsId: string): Promise<void> {
     return new Promise((resolve, reject) => {
-      set(ref(this.db, userId + '/cards/' + card.id), ({
+      set(ref(this.db, userId + '/cards/'+ collectionsId + '/' + card.id), ({
         ...card
       })).then(resolve, reject).catch(reject)
     })
   }
 
-  updateCardsMetrics(card: Card, userId: number): Promise<void> {
+  updateCardsMetrics(card: Card, userId: number, collectionsId: string): Promise<void> {
     return new Promise((resolve, reject) => {
-      set(ref(this.db, userId + '/cards/' + card.id), ({
+      set(ref(this.db, userId + '/cards/' + collectionsId + '/' + card.id), ({
         ...card
       })).then(resolve, reject).catch(reject)
     })
   }
 
-  getFilteredCards(userId: number, limit: number): Promise<Collection<Card>> {
+  getFilteredCards(userId: number, limit: number, collectionsId: string): Promise<Collection<Card>> {
     return new Promise((resolve, reject) => {
-      const cardsRef = query(ref(this.db, userId + '/cards'), orderByChild('metrics/percent'), limitToFirst(limit));
+      const cardsRef = query(ref(this.db, userId + '/cards/' + collectionsId), orderByChild('metrics/percent'), limitToFirst(limit));
       get(cardsRef)
       .then((snapshot) => resolve(snapshot.val()), reject)
       .catch(reject)
     })
   }
 
-  deleteCard(userId: number, cardId: string): Promise<void> {
+  deleteCard(userId: number, cardId: string, collectionsId: string): Promise<void> {
     return new Promise((resolve, reject) => {
-      remove(ref(this.db, userId + '/cards/' + cardId))
+      remove(ref(this.db, userId + '/cards/'+ collectionsId + '/' + cardId))
       .then(resolve, reject)
       .catch(reject)
+    })
+  }
+
+  getCollections(userId: number): Promise<Collection<CardCollection>> {
+    return new Promise((resolve, reject) => {
+      get(ref(this.db, userId + '/collections'))
+      .then((snapshot) => resolve(snapshot.val()), reject)
+      .catch(reject)
+    })
+  }
+
+  createCollection(userId: number, collection: CardCollection):Promise<void> {
+    console.log('-----');
+
+    return new Promise((resolve, reject) => {
+      set(ref(this.db, userId + '/collections/' + collection.id), {
+        ...collection
+      }).then(resolve, reject).catch(reject)
     })
   }
 }
@@ -64,6 +82,10 @@ class DatabaseService {
 const db = new DatabaseService();
 export default db;
 
+export interface CardCollection{
+  id: string;
+  name: string
+}
 
 export interface Card {
   id: string;

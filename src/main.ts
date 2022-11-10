@@ -7,15 +7,18 @@ import { phrases } from './helpers/bot_phrases.js';
 import keyboards, { GlobalButtons } from './helpers/keyboards.js';
 import { AddCards } from './contrallors/add-cards.js';
 import { Repeater } from './contrallors/repeater/repeater.js';
+import { colectionsScenes, MainCollections } from './contrallors/collections/collections.js';
 
 const bot = new Telegraf<Scenes.SceneContext>(conf.botToken);
 
 const addCards = new AddCards()
 const repeater = new Repeater()
+const mainCollections = new MainCollections()
 
 const stage = new Scenes.Stage<Scenes.SceneContext>([
   addCards.scene,
-  repeater.scene
+  repeater.scene,
+  ...colectionsScenes
 ], {
   //параметры
   ttl: 1800 // время сколько будет храниться сцена в памяти
@@ -26,7 +29,8 @@ bot.use(stage.middleware());
 
 export enum MainMenuButtons {
   ADD = '✅ Добавить слова',
-  WORKOUT = '💪 Тренеровка'
+  WORKOUT = '💪 Тренеровка',
+  CONFIG_COLLECTIONS = '📚 Коллеции',
 }
 
 (async (): Promise<void> => {
@@ -50,7 +54,8 @@ export enum MainMenuButtons {
 
   bot.hears(MainMenuButtons.ADD, (ctx) => ctx.scene.enter(addCards.sceneKey));
   bot.hears(MainMenuButtons.WORKOUT, (ctx) => ctx.scene.enter(repeater.sceneKey));
-
+  bot.hears(MainMenuButtons.CONFIG_COLLECTIONS, (ctx) => mainCollections.start(ctx));
+  // mainCollections.initBotHears(bot);
   bot.launch();
 })()
 
