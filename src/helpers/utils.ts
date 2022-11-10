@@ -15,3 +15,6 @@ export function mixArray(arr: unknown[]): unknown[] {
   return arr.sort(() => 0.5 - Math.random());
 }
 
+export function getUserId(ctx): number {
+  return ctx.message.chat.id;
+}

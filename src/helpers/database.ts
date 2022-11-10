@@ -59,6 +59,24 @@ class DatabaseService {
       .catch(reject)
     })
   }
+
+  getCollections(userId: number): Promise<Collection<CardCollection>> {
+    return new Promise((resolve, reject) => {
+      get(ref(this.db, userId + '/collections'))
+      .then((snapshot) => resolve(snapshot.val()), reject)
+      .catch(reject)
+    })
+  }
+
+  createCollection(userId: number, collection: CardCollection):Promise<void> {
+    console.log('-----');
+
+    return new Promise((resolve, reject) => {
+      set(ref(this.db, userId + '/collections/' + collection.id), {
+        ...collection
+      }).then(resolve, reject).catch(reject)
+    })
+  }
 }
 
 const db = new DatabaseService();

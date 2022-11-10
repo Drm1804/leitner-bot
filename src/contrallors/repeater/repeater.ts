@@ -4,7 +4,7 @@ import { phrases } from '../../helpers/bot_phrases.js';
 import db, { Card } from '../../helpers/database.js';
 import keyboards, { GlobalButtons } from '../../helpers/keyboards.js';
 import logger from '../../helpers/logger.js';
-import { mixArray } from '../../helpers/utils.js';
+import { getUserId, mixArray } from '../../helpers/utils.js';
 import { pretifyAsk, recalculateMetrics } from './repeater.utils.js';
 
 const _logger: Logger = logger.get('Repeater');
@@ -45,7 +45,7 @@ export class Repeater {
 
   private async enter(ctx): Promise<void> {
     _logger.info('Enter scene');
-    const userId = ctx.message.chat.id;
+    const userId = getUserId(ctx);
     // получить весь список пар фраз
     try {
       const collection = await db.getFilteredCards(userId, LIMIT_ONE_LEARN_CYCLE);
@@ -90,7 +90,7 @@ export class Repeater {
 
   private async answer(ctx, isWrong = false): Promise<void> {
     _logger.info('Answer');
-    const userId = ctx.message.chat.id;
+    const userId = getUserId(ctx);
 
     this.currentCards.metrics = recalculateMetrics(this.currentCards.metrics, isWrong, STAT_TRASHHOLD)
     await db.updateCardsMetrics(this.currentCards, userId);
@@ -131,7 +131,7 @@ export class Repeater {
   private async deleteCard(ctx): Promise<void> {
     _logger.info('deleteCard');
 
-    const userId = ctx.message.chat.id;
+    const userId = getUserId(ctx);
 
     try {
       await db.deleteCard(userId, this.currentCards.id);

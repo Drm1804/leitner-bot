@@ -21,5 +21,7 @@ export const phrases = {
   repeater_have_no_wrong_answeres: 'Ты нигде не ошибся, поэтому выходим',
   repeater_again: 'Начинаем с начала',
   repeater_remove_success: 'Успешно удалил фразу:',
-  repeater_remove_error: 'Не получилось удалить фразу'
+  repeater_remove_error: 'Не получилось удалить фразу',
+  collections_main_enter: (collectionsList: string): string => `Коллекция - это набор карточек объединенных по смыслу. Список ваших коллекций: ${collectionsList}`,
+  collections_main_enter_err: 'Не смог загрузить коллеции'
 }
