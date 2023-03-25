@@ -55,7 +55,7 @@ export enum MainMenuButtons {
   bot.hears(MainMenuButtons.ADD, (ctx) => ctx.scene.enter(addCards.sceneKey));
   bot.hears(MainMenuButtons.WORKOUT, (ctx) => ctx.scene.enter(repeater.sceneKey));
   bot.hears(MainMenuButtons.CONFIG_COLLECTIONS, (ctx) => mainCollections.start(ctx));
-  // mainCollections.initBotHears(bot);
+  mainCollections.initBotHears(bot);
   bot.launch();
 })()
 

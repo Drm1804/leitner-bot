@@ -10,6 +10,8 @@ import { AddCollections } from './add.js';
 
 const _logger: Logger = logger.get('MainCollections');
 
+export const COLLECTIONS_LIMIT = 10;
+export const COLLECTION_NAME_LIMIT = 100;
 export const DEFAULT_COLLECTION: CardCollection = {
   id: 'default',
   name: 'default'
@@ -46,7 +48,7 @@ export class MainCollections {
 
   public initBotHears(bot): void {
     _logger.info('initBotHears')
-    bot.hears(CollectionButtons.ADD, (ctx) => ctx.csene.enter(addCollections.sceneKey))
+    bot.hears(CollectionButtons.ADD, (ctx) => ctx.scene.enter(addCollections.sceneKey))
     // bot.hears(CollectionButtons.EDIT, () => {})
     // bot.hears(CollectionButtons.REMOVE, () => {})
   }

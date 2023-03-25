@@ -69,8 +69,6 @@ class DatabaseService {
   }
 
   createCollection(userId: number, collection: CardCollection):Promise<void> {
-    console.log('-----');
-
     return new Promise((resolve, reject) => {
       set(ref(this.db, userId + '/collections/' + collection.id), {
         ...collection
