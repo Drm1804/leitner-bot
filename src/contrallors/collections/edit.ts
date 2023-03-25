@@ -26,13 +26,18 @@ export class EditCollections {
     this.scene.on('text', (ctx) => this.renameCollection(ctx));
     const regExp = new RegExp(`^${CALLBACK_KEY}[a-zA-Z0-9]*`)
     this.scene.action(regExp, async (ctx) => {
-      this.currendCollectionId = ctx.update.callback_query.data.split('_!!_')[1];
+      this.currendCollectionId = ctx.update.callback_query.data.split(CALLBACK_SEPARATOR)[1];
       await ctx.reply(phrases.edit_collections_instruction(COLLECTION_NAME_LIMIT),  Markup.keyboard([CollectionButtons.FINISH]))
     })
   }
 
   private async enter(ctx): Promise<void> {
     _logger.info('Enter scene');
+
+    //set default parameters
+    this.collections = {};
+    this.currendCollectionId = null;
+
     const userId = getUserId(ctx);
 
     try {

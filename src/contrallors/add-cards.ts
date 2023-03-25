@@ -4,7 +4,7 @@ import { phrases } from '../helpers/bot_phrases.js';
 import db, { Card, CardCollection, Collection } from '../helpers/database.js';
 import keyboards, { GlobalButtons } from '../helpers/keyboards.js';
 import logger from '../helpers/logger.js';
-import { v4 as uuid4 } from 'uuid';
+import { uuidv4 } from '@firebase/util';
 import { DEFAULT_COLLECTION } from './collections/collections.js';
 import { getUserId } from '../helpers/utils.js';
 
@@ -12,18 +12,16 @@ const _logger: Logger = logger.get('AddCards');
 const MAX_INPUT_LENGTH = 4000;
 const CALLBACK_SEPARATOR = '_!!_'
 const CALLBACK_KEY = 'collcetions_cb_key' + CALLBACK_SEPARATOR;
-const { leave } = Scenes.Stage;
-
 
 export class AddCards {
   public scene: any;
   public sceneKey = 'add-cards';
-  private collections: Collection<CardCollection> = {};
-  private currentCollection = DEFAULT_COLLECTION;
+  private collections: Collection<CardCollection>;
+  private currentCollection;
 
   constructor() {
     this.scene = new Scenes.BaseScene<Scenes.SceneContext>(this.sceneKey);
-    this.scene.hears(GlobalButtons.FINISH, leave<Scenes.SceneContext>());
+    this.scene.hears(GlobalButtons.FINISH, (ctx) => ctx.scene.leave());
     this.scene.enter((ctx) => this.enter(ctx));
     this.scene.leave((ctx) => this.leave(ctx));
     this.scene.on('text', (ctx) => this.addCards(ctx));
@@ -38,6 +36,8 @@ export class AddCards {
 
   private async enter(ctx): Promise<void> {
     _logger.info('Enter scene');
+    this.currentCollection = DEFAULT_COLLECTION
+    this.collections = {};
 
     try {
       const userId = getUserId(ctx);
@@ -59,7 +59,6 @@ export class AddCards {
 
   private leave(ctx): void {
     _logger.info('Leave scene');
-    this.currentCollection = DEFAULT_COLLECTION;
     return ctx.reply(phrases.leave_scene, keyboards.mainMenu());
   }
 
@@ -109,7 +108,7 @@ export class AddCards {
 
   private mapToCards(arr: string[][]): Card[] {
     return arr.map(([term, definition]) => ({
-      id: uuid4(),
+      id: uuidv4(),
       term,
       definition,
       metrics: {

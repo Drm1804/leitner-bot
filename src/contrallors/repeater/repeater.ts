@@ -29,10 +29,10 @@ export class Repeater {
   public sceneKey = 'repeater';
   private learnCard: Card[]
   private currentCards: Card;
-  private wrongAnswers: Card[] = [];
-  private counter = 0;
-  private currentCollection = DEFAULT_COLLECTION;
-  private collections: Collection<CardCollection> = {}
+  private wrongAnswers: Card[];
+  private counter: number;
+  private currentCollection;
+  private collections: Collection<CardCollection>;
 
   constructor() {
     this.scene = new Scenes.BaseScene<Scenes.SceneContext>(this.sceneKey);
@@ -55,6 +55,14 @@ export class Repeater {
 
   private async enter(ctx): Promise<void> {
     _logger.info('Enter scene');
+
+    // Set default parameters
+    this.wrongAnswers = [];
+    this.counter = 0;
+    this.currentCollection = DEFAULT_COLLECTION;
+    this.collections = {};
+
+
     const userId = getUserId(ctx);
     this.currentCollection = DEFAULT_COLLECTION;
     // получить весь список пар фраз
@@ -71,7 +79,6 @@ export class Repeater {
   private leave(ctx): void {
     _logger.info('Leave scene');
     return ctx.reply(phrases.leave_scene, keyboards.mainMenu())
-
   }
 
   private async start(ctx): Promise<void> {

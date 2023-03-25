@@ -26,7 +26,7 @@ export class RemoveCollections {
     this.scene.action(regExp, async (ctx) => {
       _logger.info('Choosed collections')
 
-      const collectId = ctx.update.callback_query.data.split('_!!_')[1];
+      const collectId = ctx.update.callback_query.data.split(CALLBACK_SEPARATOR)[1];
 
       if(collectId === DEFAULT_COLLECTION.id) {
         _logger.info('Try to remove default collections');
@@ -51,6 +51,10 @@ export class RemoveCollections {
 
   private async enter(ctx): Promise<void> {
     _logger.info('Enter scene');
+
+    // set default parameters
+    this.collections = {};
+
     const userId = getUserId(ctx);
 
     try {

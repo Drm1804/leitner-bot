@@ -14,7 +14,7 @@ const _logger: Logger = logger.get('AddCollections');
 export class AddCollections {
   public scene: any;
   public sceneKey = 'add-collections';
-  private collectionsCount = 0;
+  private collectionsCount: number;
 
   constructor() {
     this.scene = new Scenes.BaseScene<Scenes.SceneContext>(this.sceneKey);
@@ -27,6 +27,10 @@ export class AddCollections {
 
   private async enter(ctx): Promise<void> {
     _logger.info('Enter scene');
+
+    //set default parameters
+    this.collectionsCount = 0;
+
     const userId = getUserId(ctx);
 
     try {
