@@ -7,6 +7,7 @@ import logger from '../../helpers/logger.js';
 import { getUserId } from '../../helpers/utils.js';
 import { AddCollections } from './add.js';
 import { EditCollections } from './edit.js';
+import { RemoveCollections } from './remove.js';
 
 
 const _logger: Logger = logger.get('MainCollections');
@@ -25,9 +26,9 @@ export enum CollectionButtons {
   FINISH = '🏁 Закончить' // Пришлось задублировать, поскольку в рантайме не работае импорт GlobalButtons
 }
 
-
 const addCollections = new AddCollections();
 const editCollections = new EditCollections();
+const removeCollections = new RemoveCollections();
 
 export class MainCollections {
   public async start(ctx): Promise<void> {
@@ -52,7 +53,7 @@ export class MainCollections {
     _logger.info('initBotHears')
     bot.hears(CollectionButtons.ADD, (ctx) => ctx.scene.enter(addCollections.sceneKey))
     bot.hears(CollectionButtons.EDIT, (ctx) => ctx.scene.enter(editCollections.sceneKey))
-    // bot.hears(CollectionButtons.REMOVE, () => {})
+    bot.hears(CollectionButtons.REMOVE, (ctx) => ctx.scene.enter(removeCollections.sceneKey))
   }
 
 
@@ -68,5 +69,6 @@ export class MainCollections {
 
 export const colectionsScenes = [
   addCollections.scene,
-  editCollections.scene
+  editCollections.scene,
+  removeCollections.scene
 ]

@@ -36,4 +36,7 @@ export const phrases = {
   edit_collections_instruction:  (limit: number): string => `Пришлите новое имя коллекции. \n\n Длина имени не больше ${limit} символов`,
   edit_collections_enter_name_length_error:  (limit: number): string => `Слишком длинное название. \n\n Длина имени не больше ${limit} символов`,
   edit_collactions_success: `Коллекция успешно переименована`,
+  remove_collections_enter: `Чтобы удалить колекцию, нажмите на коллекцию из списка ниже. `,
+  remove_collections_error_remov: `Не получилось удалить коллекцию. `,
+  remove_collection_error_default: 'Невозможно удалить коллекцию по-умолчанию',
 }

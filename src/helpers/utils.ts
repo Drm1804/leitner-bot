@@ -16,5 +16,5 @@ export function mixArray(arr: unknown[]): unknown[] {
 }
 
 export function getUserId(ctx): number {
-  return ctx.message.chat.id;
+  return ctx?.message?.chat?.id || ctx?.update?.callback_query?.from?.id || 0;
 }

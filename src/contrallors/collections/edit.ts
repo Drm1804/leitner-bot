@@ -79,7 +79,7 @@ export class EditCollections {
 
   private async showCollectionsList(ctx): Promise<void> {
     const d = Object.values(this.collections).map((c) => ([{
-      text: c.name,
+      text: '✏️ ' + c.name,
       callback_data: CALLBACK_KEY + c.id
     }]));
 
