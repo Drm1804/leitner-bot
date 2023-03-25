@@ -1,7 +1,7 @@
 import { Logger } from 'log4js';
 import { Markup, Scenes } from 'telegraf';
 import { phrases } from '../../helpers/bot_phrases.js';
-import db, { Card, CardCollection, Collection } from '../../helpers/database.js';
+import db, { Card, CardCollection } from '../../helpers/database.js';
 import keyboards, { GlobalButtons } from '../../helpers/keyboards.js';
 import logger from '../../helpers/logger.js';
 import { getUserId, mixArray } from '../../helpers/utils.js';
@@ -27,17 +27,11 @@ export enum RepeaterButtons {
 export class Repeater {
   public scene: any;
   public sceneKey = 'repeater';
-  private learnCard: Card[]
-  private currentCards: Card;
-  private wrongAnswers: Card[];
-  private counter: number;
-  private currentCollection;
-  private collections: Collection<CardCollection>;
 
   constructor() {
     this.scene = new Scenes.BaseScene<Scenes.SceneContext>(this.sceneKey);
     this.scene.enter((ctx) => this.enter(ctx));
-    this.scene.leave(this.leave);
+    this.scene.leave((ctx) => this.leave(ctx));
     this.scene.hears(GlobalButtons.FINISH, (ctx) => ctx.scene.leave());
     this.scene.hears(GlobalButtons.START, (ctx) => this.start(ctx));
     this.scene.hears(RepeaterButtons.CHECK, (ctx) => this.check(ctx));
@@ -48,8 +42,8 @@ export class Repeater {
     const regExp = new RegExp(`^${CALLBACK_KEY}[a-zA-Z0-9]*`)
     this.scene.action(regExp, async (ctx) => {
       const collectId = ctx.update.callback_query.data.split(CALLBACK_SEPARATOR)[1];
-      this.currentCollection = this.collections[collectId]
-      await ctx.reply(phrases.repeater_select_collections(this.currentCollection.name),  Markup.keyboard([[GlobalButtons.START], [GlobalButtons.FINISH]]))
+      ctx.session.currentCollection = ctx.session.collections[collectId]
+      await ctx.reply(phrases.repeater_select_collections(ctx.session.currentCollection.name),  Markup.keyboard([[GlobalButtons.START], [GlobalButtons.FINISH]]))
     })
   }
 
@@ -57,17 +51,13 @@ export class Repeater {
     _logger.info('Enter scene');
 
     // Set default parameters
-    this.wrongAnswers = [];
-    this.counter = 0;
-    this.currentCollection = DEFAULT_COLLECTION;
-    this.collections = {};
-
+    this.reset(ctx);
 
     const userId = getUserId(ctx);
-    this.currentCollection = DEFAULT_COLLECTION;
+    ctx.session.currentCollection = DEFAULT_COLLECTION;
     // получить весь список пар фраз
     try {
-      this.collections = await db.getCollections(userId);
+      ctx.session.collections = await db.getCollections(userId);
       await ctx.reply(phrases.enter_repeater, Markup.keyboard([[GlobalButtons.START], [GlobalButtons.FINISH]]));
       await this.showCollectionsList(ctx);
     } catch {
@@ -78,26 +68,31 @@ export class Repeater {
 
   private leave(ctx): void {
     _logger.info('Leave scene');
+    this.reset(ctx);
     return ctx.reply(phrases.leave_scene, keyboards.mainMenu())
   }
 
   private async start(ctx): Promise<void> {
     const userId = getUserId(ctx);
-    const collection = await db.getFilteredCards(userId, LIMIT_ONE_LEARN_CYCLE, this.currentCollection.id);
+    const collection = await db.getFilteredCards(userId, LIMIT_ONE_LEARN_CYCLE, ctx.session.currentCollection.id);
+    if(!collection) {
+      ctx.reply(phrases.repeater_error_empty_collection, Markup.keyboard([GlobalButtons.FINISH]));
+      return;
+    }
     _logger.info('Collection of words was got');
-    this.learnCard = mixArray(Object.values(collection)) as Card[];
-    this.counter = 0;
-    this.wrongAnswers = [];
-    _logger.info(`There are ${this.learnCard.length} cards`);
+    ctx.session.learnCard = mixArray(Object.values(collection)) as Card[];
+    ctx.session.counter = 0;
+    ctx.session.wrongAnswers = [];
+    _logger.info(`There are ${ctx.session.learnCard.length} cards`);
     this.ask(ctx);
   }
 
   private ask(ctx): void {
     _logger.info('Ask');
-    this.currentCards = this.learnCard[this.counter];
-    this.counter += 1;
+    ctx.session.currentCards = ctx.session.learnCard[ctx.session.counter];
+    ctx.session.counter += 1;
 
-    ctx.reply(pretifyAsk(this.currentCards, this.counter, this.learnCard.length), Markup.keyboard([
+    ctx.reply(pretifyAsk(ctx.session.currentCards, ctx.session.counter, ctx.session.learnCard.length), Markup.keyboard([
       [RepeaterButtons.CHECK],
       [GlobalButtons.FINISH]
     ]))
@@ -105,7 +100,7 @@ export class Repeater {
 
   private check(ctx): void {
     _logger.info('Check');
-    ctx.reply(this.currentCards.definition, Markup.keyboard([
+    ctx.reply(ctx.session.currentCards.definition, Markup.keyboard([
       [RepeaterButtons.CORRECT, RepeaterButtons.WRONG],
       [RepeaterButtons.DELETE],
       [GlobalButtons.FINISH]
@@ -116,14 +111,14 @@ export class Repeater {
     _logger.info('Answer');
     const userId = getUserId(ctx);
 
-    this.currentCards.metrics = recalculateMetrics(this.currentCards.metrics, isWrong, STAT_TRASHHOLD)
-    await db.updateCardsMetrics(this.currentCards, userId, DEFAULT_COLLECTION.id);
+    ctx.session.currentCards.metrics = recalculateMetrics(ctx.session.currentCards.metrics, isWrong, STAT_TRASHHOLD)
+    await db.updateCardsMetrics(ctx.session.currentCards, userId, DEFAULT_COLLECTION.id);
 
     if (isWrong) {
-      this.wrongAnswers.push(this.currentCards);
+      ctx.session.wrongAnswers.push(ctx.session.currentCards);
     }
 
-    if (this.counter >= this.learnCard.length) {
+    if (ctx.session.counter >= ctx.session.learnCard.length) {
       _logger.info('Finish cards repeat');
       await ctx.reply(phrases.repeater_finish_repeat, Markup.keyboard([
         [RepeaterButtons.REPEAT_WRONG],
@@ -138,16 +133,16 @@ export class Repeater {
   private async reeateWrong(ctx): Promise<void> {
     _logger.info('reeateWrong');
 
-    if (this.wrongAnswers.length === 0) {
+    if (ctx.session.wrongAnswers.length === 0) {
       _logger.info('Don\'t have wrong answer, go to main menu');
       await ctx.reply(phrases.repeater_have_no_wrong_answeres);
       this.leave(ctx);
       return;
     }
 
-    this.learnCard = this.wrongAnswers;
-    this.counter = 0;
-    this.wrongAnswers = [];
+    ctx.session.learnCard = ctx.session.wrongAnswers;
+    ctx.session.counter = 0;
+    ctx.session.wrongAnswers = [];
     await ctx.reply(phrases.repeater_again)
     this.ask(ctx)
   }
@@ -158,19 +153,28 @@ export class Repeater {
     const userId = getUserId(ctx);
 
     try {
-      await db.deleteCard(userId, this.currentCards.id, DEFAULT_COLLECTION.id);
+      await db.deleteCard(userId, ctx.session.currentCards.id, DEFAULT_COLLECTION.id);
       _logger.info('Remove card');
-      await ctx.reply(phrases.repeater_remove_success + this.currentCards.term + ' => ' + this.currentCards.definition)
+      await ctx.reply(phrases.repeater_remove_success + ctx.session.currentCards.term + ' => ' + ctx.session.currentCards.definition)
     } catch {
       _logger.info('Can\t remove card');
       await ctx.reply(phrases.repeater_remove_error);
     }
 
+    if (ctx.session.counter >= ctx.session.learnCard.length) {
+      _logger.info('Finish cards repeat');
+      await ctx.reply(phrases.repeater_finish_repeat, Markup.keyboard([
+        [RepeaterButtons.REPEAT_WRONG],
+        [GlobalButtons.FINISH]
+      ]))
+      return;
+    }
+    
     this.ask(ctx)
   }
 
   private async showCollectionsList(ctx): Promise<void> {
-    const d = Object.values(this.collections).map((c) => ([{
+    const d = Object.values(ctx.session.collections).map((c: CardCollection) => ([{
       text: c.name,
       callback_data: CALLBACK_KEY + c.id
     }]));
@@ -180,5 +184,14 @@ export class Repeater {
         inline_keyboard: [...d]
       }) as any
     })
+  }
+
+  private reset(ctx): void {
+    ctx.session.learnCard = []
+    ctx.session.currentCards = {};
+    ctx.session.wrongAnswers = [];
+    ctx.session.counter = 0;
+    ctx.session.currentCollection = null;
+    ctx.session.collections = {};
   }
 }

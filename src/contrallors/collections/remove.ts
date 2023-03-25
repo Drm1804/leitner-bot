@@ -1,7 +1,7 @@
 import { Logger } from 'log4js';
 import { Markup, Scenes } from 'telegraf';
 import { phrases } from '../../helpers/bot_phrases.js';
-import db, { CardCollection, Collection } from '../../helpers/database.js';
+import db, { CardCollection } from '../../helpers/database.js';
 import keyboards from '../../helpers/keyboards.js';
 import logger from '../../helpers/logger.js';
 import { getUserId } from '../../helpers/utils.js';
@@ -15,7 +15,6 @@ const CALLBACK_KEY = 'collcetions_cb_key' + CALLBACK_SEPARATOR;
 export class RemoveCollections {
   public scene: any;
   public sceneKey = 'remove-collections';
-  private collections: Collection<CardCollection>
 
   constructor() {
     this.scene = new Scenes.BaseScene<Scenes.SceneContext>(this.sceneKey);
@@ -27,7 +26,7 @@ export class RemoveCollections {
       _logger.info('Choosed collections')
 
       const collectId = ctx.update.callback_query.data.split(CALLBACK_SEPARATOR)[1];
-
+      await ctx.answerCbQuery('Ok');
       if(collectId === DEFAULT_COLLECTION.id) {
         _logger.info('Try to remove default collections');
         await ctx.reply(phrases.remove_collection_error_default, Markup.keyboard([CollectionButtons.FINISH]));
@@ -39,7 +38,7 @@ export class RemoveCollections {
       try {
         await db.removeCollection(userId, collectId);
         _logger.info('Removed collection with id ' + collectId);
-        this.collections = await db.getCollections(userId);
+        ctx.session.collections = await db.getCollections(userId);
         await ctx.reply(phrases.remove_collections_enter, Markup.keyboard([CollectionButtons.FINISH]));
         await this.showCollectionsList(ctx);
       } catch {
@@ -53,12 +52,12 @@ export class RemoveCollections {
     _logger.info('Enter scene');
 
     // set default parameters
-    this.collections = {};
+    this.reset(ctx);
 
     const userId = getUserId(ctx);
 
     try {
-      this.collections = await db.getCollections(userId);
+      ctx.session.collections = await db.getCollections(userId);
       await ctx.reply(phrases.edit_collections_enter, Markup.keyboard([CollectionButtons.FINISH]));
       await this.showCollectionsList(ctx);
     } catch {
@@ -69,11 +68,12 @@ export class RemoveCollections {
 
   private leave(ctx): void {
     _logger.info('Leave scene');
+    this.reset(ctx);
     return ctx.reply(phrases.leave_scene, keyboards.mainMenu());
   }
 
   private async showCollectionsList(ctx): Promise<void> {
-    const d = Object.values(this.collections).map((c) => ([{
+    const d = Object.values(ctx.session.collections).map((c: CardCollection) => ([{
       text: '🚫 ' + c.name,
       callback_data: CALLBACK_KEY + c.id
     }]));
@@ -83,5 +83,9 @@ export class RemoveCollections {
         inline_keyboard: [...d]
       }) as any
     })
+  }
+
+  private reset(ctx): void {
+    ctx.session.collections = {};
   }
 }

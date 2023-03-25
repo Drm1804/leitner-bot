@@ -83,11 +83,12 @@ class DatabaseService {
     })
   }
 
-  removeCollection(userId: number, collectionsId: string): Promise<unknown[]> {
-    const qAll = [];
-    qAll.push(remove(ref(this.db, userId + '/collections/'+ collectionsId)))
-    qAll.push(remove(ref(this.db, userId + '/cards/'+ collectionsId)))
-    return Promise.all([])
+  removeCollection(userId: number, collectionsId: string): Promise<void> {
+    return new Promise((resolve, reject) => {
+      remove(ref(this.db, userId + '/collections/'+ collectionsId))
+      .then(resolve, reject)
+      .catch(reject)
+    })
   }
 }
 

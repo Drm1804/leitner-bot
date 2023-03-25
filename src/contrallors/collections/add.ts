@@ -14,7 +14,6 @@ const _logger: Logger = logger.get('AddCollections');
 export class AddCollections {
   public scene: any;
   public sceneKey = 'add-collections';
-  private collectionsCount: number;
 
   constructor() {
     this.scene = new Scenes.BaseScene<Scenes.SceneContext>(this.sceneKey);
@@ -29,28 +28,29 @@ export class AddCollections {
     _logger.info('Enter scene');
 
     //set default parameters
-    this.collectionsCount = 0;
+    ctx.session.collectionsCount = 0;
 
     const userId = getUserId(ctx);
 
     try {
       const collectResp = await db.getCollections(userId);
-      this.collectionsCount = Object.values(collectResp).length
+      ctx.session.collectionsCount = Object.values(collectResp).length
       _logger.info('Collections was loaded');
 
-      if (this.collectionsCount > COLLECTIONS_LIMIT) {
+      if (ctx.session.collectionsCount > COLLECTIONS_LIMIT) {
         _logger.info('There are collections limit');
         await ctx.reply(phrases.add_collection_limit)
         ctx.scene.leave();
 
       } else {
         _logger.info('Ready ro add a new collection');
-        await ctx.reply(phrases.add_collection_ready_to_add(this.collectionsCount, COLLECTIONS_LIMIT, COLLECTION_NAME_LIMIT))
+        await ctx.reply(phrases.add_collection_ready_to_add(ctx.session.collectionsCount, COLLECTIONS_LIMIT, COLLECTION_NAME_LIMIT))
       }
 
     } catch {
       _logger.error('Cat\t grab collections');
       await ctx.reply(phrases.add_collection_enter_error);
+      this.reset(ctx);
       ctx.scene.leave();
     }
   }
@@ -77,15 +77,19 @@ export class AddCollections {
     try {
       await db.createCollection(userId, newCollection)
       _logger.info('Succes create new collection');
-      this.collectionsCount += 1;
+      ctx.session.collectionsCount += 1;
       ctx.reply(phrases.add_collection_success_add, Markup.keyboard([CollectionButtons.FINISH]));
     } catch {
       _logger.error('Can\'t create new collection');
       ctx.reply(phrases.add_collection_success_add, Markup.keyboard([CollectionButtons.FINISH]));
     }
 
-    if(this.collectionsCount > COLLECTIONS_LIMIT) {
+    if(ctx.session.collectionsCount > COLLECTIONS_LIMIT) {
       ctx.scene.leave();
     }
+  }
+
+  private reset(ctx): void {
+    ctx.session.collectionsCount = 0;
   }
 }

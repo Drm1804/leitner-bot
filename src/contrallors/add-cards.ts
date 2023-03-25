@@ -1,7 +1,7 @@
 import { Logger } from 'log4js';
 import { Markup, Scenes } from 'telegraf';
 import { phrases } from '../helpers/bot_phrases.js';
-import db, { Card, CardCollection, Collection } from '../helpers/database.js';
+import db, { Card, CardCollection } from '../helpers/database.js';
 import keyboards, { GlobalButtons } from '../helpers/keyboards.js';
 import logger from '../helpers/logger.js';
 import { uuidv4 } from '@firebase/util';
@@ -16,8 +16,6 @@ const CALLBACK_KEY = 'collcetions_cb_key' + CALLBACK_SEPARATOR;
 export class AddCards {
   public scene: any;
   public sceneKey = 'add-cards';
-  private collections: Collection<CardCollection>;
-  private currentCollection;
 
   constructor() {
     this.scene = new Scenes.BaseScene<Scenes.SceneContext>(this.sceneKey);
@@ -28,24 +26,24 @@ export class AddCards {
     const regExp = new RegExp(`^${CALLBACK_KEY}[a-zA-Z0-9]*`)
     this.scene.action(regExp, async (ctx) => {
       const collectId = ctx.update.callback_query.data.split(CALLBACK_SEPARATOR)[1];
-      this.currentCollection = this.collections[collectId]
-      await ctx.reply(phrases.add_cards_select_collections(this.currentCollection.name),  Markup.keyboard([GlobalButtons.FINISH]))
+      ctx.session.currentCollection = ctx.session.collections[collectId]
+      await ctx.reply(phrases.add_cards_select_collections(ctx.session.currentCollection.name),  Markup.keyboard([GlobalButtons.FINISH]))
     })
   }
 
 
   private async enter(ctx): Promise<void> {
     _logger.info('Enter scene');
-    this.currentCollection = DEFAULT_COLLECTION
-    this.collections = {};
+    ctx.session.currentCollection = DEFAULT_COLLECTION
+    ctx.session.collections = {};
 
     try {
       const userId = getUserId(ctx);
-      this.collections = await db.getCollections(userId) || {};
+      ctx.session.collections = await db.getCollections(userId) || {};
 
-      if(Object.values(this.collections).length === 0) {
+      if(Object.values(ctx.session.collections).length === 0) {
         await db.createCollection(getUserId(ctx), DEFAULT_COLLECTION);
-        this.collections[DEFAULT_COLLECTION.id] = DEFAULT_COLLECTION;
+        ctx.session.collections[DEFAULT_COLLECTION.id] = DEFAULT_COLLECTION;
       }
 
       await ctx.reply(phrases.enter_add, Markup.keyboard([GlobalButtons.FINISH]));
@@ -54,15 +52,15 @@ export class AddCards {
       _logger.error('Catn\'t get collections');
       ctx.reply(phrases.add_cards_enter_error,  Markup.keyboard([GlobalButtons.FINISH]))
     }
-
   }
 
   private leave(ctx): void {
     _logger.info('Leave scene');
+    this.reset(ctx);
     return ctx.reply(phrases.leave_scene, keyboards.mainMenu());
   }
 
-  private addCards(ctx: Scenes.SceneContext<Scenes.SceneSessionData>): Promise<unknown> {
+  private addCards(ctx): Promise<unknown> {
     _logger.info('Start to parse user cards');
     const text = ctx.message['text'];
     const userId = getUserId(ctx);
@@ -78,7 +76,7 @@ export class AddCards {
     const qAll = [];
 
     for (const ph of listCards) {
-      qAll.push(db.writeCards(ph, userId, this.currentCollection.id))
+      qAll.push(db.writeCards(ph, userId, ctx.session.currentCollection.id))
     }
 
     return Promise.all(qAll)
@@ -120,7 +118,7 @@ export class AddCards {
   }
 
   private async showCollectionsList(ctx): Promise<void> {
-    const d = Object.values(this.collections).map((c) => ([{
+    const d = Object.values(ctx.session.collections).map((c:CardCollection) => ([{
       text: c.name,
       callback_data: CALLBACK_KEY + c.id
     }]));
@@ -130,5 +128,10 @@ export class AddCards {
         inline_keyboard: [...d]
       }) as any
     })
+  }
+
+  private reset(ctx) {
+    ctx.session.currentCollection = {}
+    ctx.session.collections = {}
   }
 }
