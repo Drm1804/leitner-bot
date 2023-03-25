@@ -6,6 +6,7 @@ import keyboards from '../../helpers/keyboards.js';
 import logger from '../../helpers/logger.js';
 import { getUserId } from '../../helpers/utils.js';
 import { AddCollections } from './add.js';
+import { EditCollections } from './edit.js';
 
 
 const _logger: Logger = logger.get('MainCollections');
@@ -26,6 +27,7 @@ export enum CollectionButtons {
 
 
 const addCollections = new AddCollections();
+const editCollections = new EditCollections();
 
 export class MainCollections {
   public async start(ctx): Promise<void> {
@@ -49,7 +51,7 @@ export class MainCollections {
   public initBotHears(bot): void {
     _logger.info('initBotHears')
     bot.hears(CollectionButtons.ADD, (ctx) => ctx.scene.enter(addCollections.sceneKey))
-    // bot.hears(CollectionButtons.EDIT, () => {})
+    bot.hears(CollectionButtons.EDIT, (ctx) => ctx.scene.enter(editCollections.sceneKey))
     // bot.hears(CollectionButtons.REMOVE, () => {})
   }
 
@@ -65,5 +67,6 @@ export class MainCollections {
 
 
 export const colectionsScenes = [
-  addCollections.scene
+  addCollections.scene,
+  editCollections.scene
 ]

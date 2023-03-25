@@ -30,5 +30,10 @@ export const phrases = {
   add_collection_ready_to_add: (collectionsLength: number, limit: number, nameLimit: number): string => `Чтобы добавить колекцию, отправьте ее название в следующем сообщение. \n Обратите внимание, что длинна не может быть больше ${nameLimit} символов. А количество коллеций ограничено ${limit}. Сейчас у вас создано ${collectionsLength}`,
   add_collection_success_add: 'Коллекция создана',
   add_collection_error_add: 'Не получилось создать коллекцию',
-
+  edit_collections_enter: `Чтобы отредактировать колекцию, нажмите на коллекцию из списка ниже. `,
+  edit_collactions_list: 'Вот список твоих коллекций',
+  edit_collections_enter_error: 'Не смог загрузить коллеции',
+  edit_collections_instruction:  (limit: number): string => `Пришлите новое имя коллекции. \n\n Длина имени не больше ${limit} символов`,
+  edit_collections_enter_name_length_error:  (limit: number): string => `Слишком длинное название. \n\n Длина имени не больше ${limit} символов`,
+  edit_collactions_success: `Коллекция успешно переименована`,
 }

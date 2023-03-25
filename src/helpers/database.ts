@@ -75,6 +75,13 @@ class DatabaseService {
       }).then(resolve, reject).catch(reject)
     })
   }
+
+  updateCollectionName(userId: number, collectionId: string, name: string): Promise<void> {
+    return new Promise((resolve, reject) => {
+      set(ref(this.db, userId + '/collections/' + collectionId + '/name'), name)
+      .then(resolve, reject).catch(reject)
+    })
+  }
 }
 
 const db = new DatabaseService();
