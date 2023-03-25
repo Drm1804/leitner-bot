@@ -1,7 +1,7 @@
 import { Logger } from 'log4js';
 import { Markup, Scenes } from 'telegraf';
 import { phrases } from '../helpers/bot_phrases.js';
-import db, { Card } from '../helpers/database.js';
+import db, { Card, CardCollection, Collection } from '../helpers/database.js';
 import keyboards, { GlobalButtons } from '../helpers/keyboards.js';
 import logger from '../helpers/logger.js';
 import { v4 as uuid4 } from 'uuid';
@@ -10,35 +10,57 @@ import { getUserId } from '../helpers/utils.js';
 
 const _logger: Logger = logger.get('AddCards');
 const MAX_INPUT_LENGTH = 4000;
+const CALLBACK_SEPARATOR = '_!!_'
+const CALLBACK_KEY = 'collcetions_cb_key' + CALLBACK_SEPARATOR;
 const { leave } = Scenes.Stage;
 
 
 export class AddCards {
   public scene: any;
   public sceneKey = 'add-cards';
+  private collections: Collection<CardCollection> = {};
+  private currentCollection = DEFAULT_COLLECTION;
 
   constructor() {
     this.scene = new Scenes.BaseScene<Scenes.SceneContext>(this.sceneKey);
     this.scene.hears(GlobalButtons.FINISH, leave<Scenes.SceneContext>());
     this.scene.enter((ctx) => this.enter(ctx));
     this.scene.leave((ctx) => this.leave(ctx));
-    this.scene.on('text', (ctx) => this.addCards(ctx))
+    this.scene.on('text', (ctx) => this.addCards(ctx));
+    const regExp = new RegExp(`^${CALLBACK_KEY}[a-zA-Z0-9]*`)
+    this.scene.action(regExp, async (ctx) => {
+      const collectId = ctx.update.callback_query.data.split(CALLBACK_SEPARATOR)[1];
+      this.currentCollection = this.collections[collectId]
+      await ctx.reply(phrases.add_cards_select_collections(this.currentCollection.name),  Markup.keyboard([GlobalButtons.FINISH]))
+    })
   }
 
 
   private async enter(ctx): Promise<void> {
     _logger.info('Enter scene');
 
+    try {
+      const userId = getUserId(ctx);
+      this.collections = await db.getCollections(userId) || {};
 
-    // Временно при заходе в этот раздел будем создавать коллекцию по-умолчанию
-    await db.createCollection(getUserId(ctx), DEFAULT_COLLECTION)
-    await ctx.reply(phrases.enter_add, Markup.keyboard([GlobalButtons.FINISH]));
+      if(Object.values(this.collections).length === 0) {
+        await db.createCollection(getUserId(ctx), DEFAULT_COLLECTION);
+        this.collections[DEFAULT_COLLECTION.id] = DEFAULT_COLLECTION;
+      }
+
+      await ctx.reply(phrases.enter_add, Markup.keyboard([GlobalButtons.FINISH]));
+      this.showCollectionsList(ctx)
+    } catch (err) {
+      _logger.error('Catn\'t get collections');
+      ctx.reply(phrases.add_cards_enter_error,  Markup.keyboard([GlobalButtons.FINISH]))
+    }
+
   }
 
   private leave(ctx): void {
     _logger.info('Leave scene');
+    this.currentCollection = DEFAULT_COLLECTION;
     return ctx.reply(phrases.leave_scene, keyboards.mainMenu());
-    leave();
   }
 
   private addCards(ctx: Scenes.SceneContext<Scenes.SceneSessionData>): Promise<unknown> {
@@ -57,7 +79,7 @@ export class AddCards {
     const qAll = [];
 
     for (const ph of listCards) {
-      qAll.push(db.writeCards(ph, userId, DEFAULT_COLLECTION.id))
+      qAll.push(db.writeCards(ph, userId, this.currentCollection.id))
     }
 
     return Promise.all(qAll)
@@ -96,5 +118,18 @@ export class AddCards {
         wrong: 0,
       }
     }))
+  }
+
+  private async showCollectionsList(ctx): Promise<void> {
+    const d = Object.values(this.collections).map((c) => ([{
+      text: c.name,
+      callback_data: CALLBACK_KEY + c.id
+    }]));
+
+    await ctx.reply(phrases.enter_add_collections_list, {
+      reply_markup: JSON.stringify({
+        inline_keyboard: [...d]
+      }) as any
+    })
   }
 }
